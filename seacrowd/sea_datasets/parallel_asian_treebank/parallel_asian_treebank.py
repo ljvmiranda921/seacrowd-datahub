@@ -137,7 +137,11 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
             lang_b_texts = [line.strip() for line in f.readlines()]
 
         with open(split_file, "r") as f:
-            split_ref = [line.strip() for line in f.readlines()]
+            url_texts = [line.strip() for line in f.readlines()]
+            breakpoint()
+            # valid_urls_for_split 
+
+
 
     # def _generate_examples(self, data_dir: str, split: str):
 
