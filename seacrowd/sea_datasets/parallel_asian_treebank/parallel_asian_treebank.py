@@ -1,4 +1,4 @@
-from itertools import combinations
+import itertools
 from typing import List
 
 import datasets
@@ -9,7 +9,7 @@ from seacrowd.utils.constants import Licenses, Tasks
 
 _DATASETNAME = "parallel_asian_treebank"
 
-_LANGUAGES = ["khm", "lao", "mya", "ind", "fil", "zlm", "tha", "vie"]
+_LANGUAGES = ["khm", "lao", "mya", "ind", "fil", "zlm", "tha", "vie", "eng"]
 _LANGUAGES_TO_FILENAME_LANGUAGE_CODE = {
     "khm": "khm",
     "lao": "lo",
@@ -19,6 +19,10 @@ _LANGUAGES_TO_FILENAME_LANGUAGE_CODE = {
     "zlm": "ms",
     "tha": "th",
     "vie": "vi",
+    "eng": "en",
+    "hin": "hi",
+    "jpn": "ja",
+    "zho": "zh",
 }
 _LOCAL = False
 _CITATION = """\
@@ -55,24 +59,31 @@ _SEACROWD_VERSION = "1.0.0"
 class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
     """The ALT project aims to advance the state-of-the-art Asian natural language processing (NLP) techniques through the open collaboration for developing and using ALT"""
 
-    BUILDER_CONFIGS = [
-        SEACrowdConfig(
-            name=f"{_DATASETNAME}_source",
-            version=_SOURCE_VERSION,
-            description=f"{_DATASETNAME} source schema",
-            schema="source",
-            subset_id=_DATASETNAME,
-        ),
-        SEACrowdConfig(
-            name=f"{_DATASETNAME}_seacrowd_t2t",
-            version=_SEACROWD_VERSION,
-            description=f"{_DATASETNAME} SEACrowd schema",
-            schema="seacrowd_t2t",
-            subset_id=_DATASETNAME,
-        ),
-    ]
-
-    DEFAULT_CONFIG_NAME = f"{_DATASETNAME}_source"
+    BUILDER_CONFIGS = []
+    lang_combinations = list(itertools.combinations(_LANGUAGES_TO_FILENAME_LANGUAGE_CODE.keys(), 2))
+    for lang_a, lang_b in lang_combinations:
+        # Don't create a subset if both languages are not from SEA
+        if lang_a not in _LANGUAGES and lang_b not in _LANGUAGES:
+            pass
+        else:
+            BUILDER_CONFIGS.append(
+                SEACrowdConfig(
+                    name=f"{_DATASETNAME}_{lang_a}_{lang_b}_source",
+                    version=_SOURCE_VERSION,
+                    description=f"{_DATASETNAME} source schema",
+                    schema="source",
+                    subset_id=f"{_DATASETNAME}_{lang_a}_{lang_b}_source",
+                )
+            )
+            BUILDER_CONFIGS.append(
+                SEACrowdConfig(
+                    name=f"{_DATASETNAME}_{lang_a}_{lang_b}_seacrowd_t2t",
+                    version=_SOURCE_VERSION,
+                    description=f"{_DATASETNAME} seacrowd schema",
+                    schema="seacrowd_t2t",
+                    subset_id=f"{_DATASETNAME}_{lang_a}_{lang_b}_seacrowd_t2t",
+                )
+            )
 
     def _info(self):
         # The features are the same for both source and seacrowd
@@ -86,6 +97,8 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
         )
 
     def _split_generators(self, dl_manager: datasets.DownloadManager) -> List[datasets.SplitGenerator]:
+        breakpoint()
+
         if self.config.data_dir is None:
             raise ValueError("This is a local dataset. Please pass the data_dir kwarg to load_dataset.")
         else:
@@ -130,7 +143,7 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
 
                 mapping_data[id][language] = sentence
 
-        combination_languages = list(combinations(_LANGUAGES, 2))
+        combination_languages = list(itertools.combinations(_LANGUAGES, 2))
         breakpoint()
 
         i = 0
