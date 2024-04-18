@@ -4,6 +4,7 @@ from typing import List, Tuple
 
 import datasets
 
+import pandas as pd
 from seacrowd.utils import schemas
 from seacrowd.utils.configs import SEACrowdConfig
 from seacrowd.utils.constants import Licenses, Tasks
@@ -130,62 +131,44 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
         ]
 
     def _generate_examples(self, data_dir: Path, lang_a: str, lang_b: str, split_file: str):
-        with open(data_dir / f"data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[lang_a]}.txt", "r") as f:
-            lang_a_texts = [line.strip() for line in f.readlines()]
 
-        with open(data_dir / f"data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[lang_b]}.txt", "r") as f:
-            lang_b_texts = [line.strip() for line in f.readlines()]
+        def _get_texts(lang: str) -> pd.DataFrame:
+            with open(data_dir / f"data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[lang]}.txt", "r") as f:
+                rows = [line.strip().split("\t") for line in f.readlines()]
+            
+            url_id = [row[0].split(".")[1] for row in rows]
+            sent_id = [row[0].split(".")[-1] for row in rows]
+            text = [row[1] for row in rows]
+
+            df = pd.DataFrame({
+                "url_id": url_id, "sent_id": sent_id, "text": text
+            })
+            return df
 
         with open(split_file, "r") as f:
             url_texts = [line.strip() for line in f.readlines()]
-            breakpoint()
-            # valid_urls_for_split 
+            # Get valid URLs for the split
+            urlids_for_current_split = [row.split("\t")[0].split(".")[1] for row in url_texts]
 
+        lang_a_df = _get_texts(lang_a)
+        lang_b_df = _get_texts(lang_b)
 
+        for idx, urlid in enumerate(urlids_for_current_split):
+            lang_a_df_split = lang_a_df[lang_a_df["url_id"]==urlid]
+            lang_b_df_split = lang_b_df[lang_b_df["url_id"]==urlid]
 
-    # def _generate_examples(self, data_dir: str, split: str):
+            if len(lang_a_df_split) == 0 or len(lang_b_df_split) == 0:
+                # Sometimes, not all languages have values for a specific ID
+                pass
+            else:
+                text_a = ' '.join(lang_a_df_split["text"].to_list())
+                text_b = ' '.join(lang_b_df_split["text"].to_list())
 
-    #     if self.config.schema not in ["source", "seacrowd_t2t"]:
-    #         raise ValueError(f"Invalid config: {self.config.name}")
-
-    #     mapping_data = {}
-
-    #     for language in _LANGUAGES:
-    #         lines = open(f"{data_dir}/data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[language]}.txt.{split}", "r").readlines()
-
-    #         for line in lines:
-    #             id, sentence = line.split("\t")
-    #             sentence = sentence.rsplit()
-
-    #             if id not in mapping_data:
-    #                 mapping_data[id] = {}
-
-    #             mapping_data[id][language] = sentence
-
-    #     combination_languages = list(itertools.combinations(_LANGUAGES, 2))
-    #     breakpoint()
-
-    #     i = 0
-
-    #     for id in mapping_data:
-    #         for each_pair in combination_languages:
-    #             if each_pair[0] in mapping_data[id] and each_pair[1] in mapping_data[id]:
-    #                 yield i, {
-    #                     "id": f"{id}-{each_pair[0]}-{each_pair[1]}",
-    #                     "text_1": mapping_data[id][each_pair[0]],
-    #                     "text_2": mapping_data[id][each_pair[1]],
-    #                     "text_1_name": each_pair[0],
-    #                     "text_2_name": each_pair[1],
-    #                 }
-
-    #                 i += 1
-
-    #                 yield i, {
-    #                     "id": f"{id}-{each_pair[1]}-{each_pair[0]}",
-    #                     "text_1": mapping_data[id][each_pair[1]],
-    #                     "text_2": mapping_data[id][each_pair[0]],
-    #                     "text_1_name": each_pair[1],
-    #                     "text_2_name": each_pair[0],
-    #                 }
-
-    #                 i += 1
+                # Same schema for both source and SEACrowd
+                yield idx, {
+                    "id": idx,
+                    "text_1": text_a,
+                    "text_2": text_b,
+                    "text_1_name": lang_a,
+                    "text_2_name": lang_b,
+                }
