@@ -1,5 +1,6 @@
 import itertools
-from typing import List
+from pathlib import Path
+from typing import List, Tuple
 
 import datasets
 
@@ -48,7 +49,12 @@ _HOMEPAGE = "https://www2.nict.go.jp/astrec-att/member/mutiyama/ALT/"
 
 _LICENSE = Licenses.CC_BY_4_0.value
 
-_URL = "https://www2.nict.go.jp/astrec-att/member/mutiyama/ALT/ALT-Parallel-Corpus-20191206.zip"
+_URLS = {
+    "data": "https://www2.nict.go.jp/astrec-att/member/mutiyama/ALT/ALT-Parallel-Corpus-20191206.zip",
+    "train": "https://www2.nict.go.jp/astrec-att/member/mutiyama/ALT/URL-train.txt",
+    "dev": "https://www2.nict.go.jp/astrec-att/member/mutiyama/ALT/URL-dev.txt",
+    "test": "https://www2.nict.go.jp/astrec-att/member/mutiyama/ALT/URL-test.txt",
+}
 
 _SUPPORTED_TASKS = [Tasks.MACHINE_TRANSLATION]
 
@@ -97,76 +103,88 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
         )
 
     def _split_generators(self, dl_manager: datasets.DownloadManager) -> List[datasets.SplitGenerator]:
+
+        def _split_at_n(text: str, n: int) -> Tuple[str, str]:
+            """Split text on the n-th instance"""
+            return ("_".join(text.split("_")[:n]), "_".join(text.split("_")[n:]))
+
+        _, subset = _split_at_n(self.config.subset_id, 3)
+        lang_pair, _ = _split_at_n(subset, 2)
+        lang_a, lang_b = lang_pair.split("_")
+
+        base_dir = Path(dl_manager.download_and_extract(_URLS["data"]))
+        lang_a_texts = []
+        lang_b_texts = []
         breakpoint()
 
-        if self.config.data_dir is None:
-            raise ValueError("This is a local dataset. Please pass the data_dir kwarg to load_dataset.")
-        else:
-            data_dir = self.config.data_dir
+        # return [
+        #     datasets.SplitGenerator(
+        #         name=datasets.Split.TRAIN,
+        #         gen_kwargs={"data_dir": data_dir, "split": "train"},
+        #     ),
+        #     datasets.SplitGenerator(
+        #         name=datasets.Split.TEST,
+        #         gen_kwargs={"data_dir": data_dir, "split": "test"},
+        #     ),
+        #     datasets.SplitGenerator(
+        #         name=datasets.Split.VALIDATION,
+        #         gen_kwargs={"data_dir": data_dir, "split": "dev"},
+        #     ),
+        # ]
 
-        # TODO:
-        # Download the zip file automatically
-        # For each file, check which split it belongs using the URLID
-        # You must also do this per language
+    def _generate_examples(
+        self,
+        lang_a_texts: str,
+        lang_a: str,
+        lang_b_texts: str,
+        lang_b: str,
+        split_ids: str,
+    ):
+        pass
 
-        return [
-            datasets.SplitGenerator(
-                name=datasets.Split.TRAIN,
-                gen_kwargs={"data_dir": data_dir, "split": "train"},
-            ),
-            datasets.SplitGenerator(
-                name=datasets.Split.TEST,
-                gen_kwargs={"data_dir": data_dir, "split": "test"},
-            ),
-            datasets.SplitGenerator(
-                name=datasets.Split.VALIDATION,
-                gen_kwargs={"data_dir": data_dir, "split": "dev"},
-            ),
-        ]
+    # def _generate_examples(self, data_dir: str, split: str):
 
-    def _generate_examples(self, data_dir: str, split: str):
+    #     if self.config.schema not in ["source", "seacrowd_t2t"]:
+    #         raise ValueError(f"Invalid config: {self.config.name}")
 
-        if self.config.schema not in ["source", "seacrowd_t2t"]:
-            raise ValueError(f"Invalid config: {self.config.name}")
+    #     mapping_data = {}
 
-        mapping_data = {}
+    #     for language in _LANGUAGES:
+    #         lines = open(f"{data_dir}/data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[language]}.txt.{split}", "r").readlines()
 
-        for language in _LANGUAGES:
-            lines = open(f"{data_dir}/data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[language]}.txt.{split}", "r").readlines()
+    #         for line in lines:
+    #             id, sentence = line.split("\t")
+    #             sentence = sentence.rsplit()
 
-            for line in lines:
-                id, sentence = line.split("\t")
-                sentence = sentence.rsplit()
+    #             if id not in mapping_data:
+    #                 mapping_data[id] = {}
 
-                if id not in mapping_data:
-                    mapping_data[id] = {}
+    #             mapping_data[id][language] = sentence
 
-                mapping_data[id][language] = sentence
+    #     combination_languages = list(itertools.combinations(_LANGUAGES, 2))
+    #     breakpoint()
 
-        combination_languages = list(itertools.combinations(_LANGUAGES, 2))
-        breakpoint()
+    #     i = 0
 
-        i = 0
+    #     for id in mapping_data:
+    #         for each_pair in combination_languages:
+    #             if each_pair[0] in mapping_data[id] and each_pair[1] in mapping_data[id]:
+    #                 yield i, {
+    #                     "id": f"{id}-{each_pair[0]}-{each_pair[1]}",
+    #                     "text_1": mapping_data[id][each_pair[0]],
+    #                     "text_2": mapping_data[id][each_pair[1]],
+    #                     "text_1_name": each_pair[0],
+    #                     "text_2_name": each_pair[1],
+    #                 }
 
-        for id in mapping_data:
-            for each_pair in combination_languages:
-                if each_pair[0] in mapping_data[id] and each_pair[1] in mapping_data[id]:
-                    yield i, {
-                        "id": f"{id}-{each_pair[0]}-{each_pair[1]}",
-                        "text_1": mapping_data[id][each_pair[0]],
-                        "text_2": mapping_data[id][each_pair[1]],
-                        "text_1_name": each_pair[0],
-                        "text_2_name": each_pair[1],
-                    }
+    #                 i += 1
 
-                    i += 1
+    #                 yield i, {
+    #                     "id": f"{id}-{each_pair[1]}-{each_pair[0]}",
+    #                     "text_1": mapping_data[id][each_pair[1]],
+    #                     "text_2": mapping_data[id][each_pair[0]],
+    #                     "text_1_name": each_pair[1],
+    #                     "text_2_name": each_pair[0],
+    #                 }
 
-                    yield i, {
-                        "id": f"{id}-{each_pair[1]}-{each_pair[0]}",
-                        "text_1": mapping_data[id][each_pair[1]],
-                        "text_2": mapping_data[id][each_pair[0]],
-                        "text_1_name": each_pair[1],
-                        "text_2_name": each_pair[0],
-                    }
-
-                    i += 1
+    #                 i += 1
