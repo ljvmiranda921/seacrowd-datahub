@@ -112,7 +112,7 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
         lang_pair, _ = _split_at_n(subset, 2)
         lang_a, lang_b = lang_pair.split("_")
 
-        data_dir= Path(dl_manager.download_and_extract(_URLS["data"])) / "ALT-Parallel-Corpus-20191206" 
+        data_dir = Path(dl_manager.download_and_extract(_URLS["data"])) / "ALT-Parallel-Corpus-20191206"
 
         return [
             datasets.SplitGenerator(
@@ -129,24 +129,15 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
             ),
         ]
 
-    def _generate_examples(
-        self,
-        data_dir: Path,
-        lang_a: str,
-        lang_b: str,
-        split_file: str
-    ):
+    def _generate_examples(self, data_dir: Path, lang_a: str, lang_b: str, split_file: str):
         with open(data_dir / f"data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[lang_a]}.txt", "r") as f:
             lang_a_texts = [line.strip() for line in f.readlines()]
 
-        with open(data_dir/ f"data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[lang_b]}.txt", "r") as f:
+        with open(data_dir / f"data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[lang_b]}.txt", "r") as f:
             lang_b_texts = [line.strip() for line in f.readlines()]
 
         with open(split_file, "r") as f:
             split_ref = [line.strip() for line in f.readlines()]
-
-        breakpoint()
-
 
     # def _generate_examples(self, data_dir: str, split: str):
 
