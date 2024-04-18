@@ -9,7 +9,7 @@ from seacrowd.utils.constants import Licenses, Tasks
 
 _DATASETNAME = "parallel_asian_treebank"
 
-_LANGUAGES = ["khm", "lao", "mya", "ind", "fil", "zlm", "tha", "vie", "eng"]
+_LANGUAGES = ["khm", "lao", "mya", "ind", "fil", "zlm", "tha", "vie"]
 _LANGUAGES_TO_FILENAME_LANGUAGE_CODE = {
     "khm": "khm",
     "lao": "lo",
@@ -62,8 +62,8 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
     BUILDER_CONFIGS = []
     lang_combinations = list(itertools.combinations(_LANGUAGES_TO_FILENAME_LANGUAGE_CODE.keys(), 2))
     for lang_a, lang_b in lang_combinations:
-        # Don't create a subset if both languages are not from SEA
         if lang_a not in _LANGUAGES and lang_b not in _LANGUAGES:
+            # Don't create a subset if both languages are not from SEA
             pass
         else:
             BUILDER_CONFIGS.append(
