@@ -112,35 +112,41 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
         lang_pair, _ = _split_at_n(subset, 2)
         lang_a, lang_b = lang_pair.split("_")
 
-        base_dir = Path(dl_manager.download_and_extract(_URLS["data"]))
-        lang_a_texts = []
-        lang_b_texts = []
-        breakpoint()
+        data_dir= Path(dl_manager.download_and_extract(_URLS["data"])) / "ALT-Parallel-Corpus-20191206" 
 
-        # return [
-        #     datasets.SplitGenerator(
-        #         name=datasets.Split.TRAIN,
-        #         gen_kwargs={"data_dir": data_dir, "split": "train"},
-        #     ),
-        #     datasets.SplitGenerator(
-        #         name=datasets.Split.TEST,
-        #         gen_kwargs={"data_dir": data_dir, "split": "test"},
-        #     ),
-        #     datasets.SplitGenerator(
-        #         name=datasets.Split.VALIDATION,
-        #         gen_kwargs={"data_dir": data_dir, "split": "dev"},
-        #     ),
-        # ]
+        return [
+            datasets.SplitGenerator(
+                name=datasets.Split.TRAIN,
+                gen_kwargs={"data_dir": data_dir, "lang_a": lang_a, "lang_b": lang_b, "split_file": dl_manager.download(_URLS["train"])},
+            ),
+            datasets.SplitGenerator(
+                name=datasets.Split.TEST,
+                gen_kwargs={"data_dir": data_dir, "lang_a": lang_a, "lang_b": lang_b, "split_file": dl_manager.download(_URLS["test"])},
+            ),
+            datasets.SplitGenerator(
+                name=datasets.Split.VALIDATION,
+                gen_kwargs={"data_dir": data_dir, "lang_a": lang_a, "lang_b": lang_b, "split_file": dl_manager.download(_URLS["dev"])},
+            ),
+        ]
 
     def _generate_examples(
         self,
-        lang_a_texts: str,
+        data_dir: Path,
         lang_a: str,
-        lang_b_texts: str,
         lang_b: str,
-        split_ids: str,
+        split_file: str
     ):
-        pass
+        with open(data_dir / f"data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[lang_a]}.txt", "r") as f:
+            lang_a_texts = [line.strip() for line in f.readlines()]
+
+        with open(data_dir/ f"data_{_LANGUAGES_TO_FILENAME_LANGUAGE_CODE[lang_b]}.txt", "r") as f:
+            lang_b_texts = [line.strip() for line in f.readlines()]
+
+        with open(split_file, "r") as f:
+            split_ref = [line.strip() for line in f.readlines()]
+
+        breakpoint()
+
 
     # def _generate_examples(self, data_dir: str, split: str):
 
