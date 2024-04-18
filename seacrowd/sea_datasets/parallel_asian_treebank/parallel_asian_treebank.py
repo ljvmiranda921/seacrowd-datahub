@@ -20,7 +20,7 @@ _LANGUAGES_TO_FILENAME_LANGUAGE_CODE = {
     "tha": "th",
     "vie": "vi",
 }
-_LOCAL = True
+_LOCAL = False
 _CITATION = """\
 @inproceedings{riza2016introduction,
   title={Introduction of the asian language treebank},
@@ -91,6 +91,11 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
         else:
             data_dir = self.config.data_dir
 
+        # TODO:
+        # Download the zip file automatically
+        # For each file, check which split it belongs using the URLID
+        # You must also do this per language
+
         return [
             datasets.SplitGenerator(
                 name=datasets.Split.TRAIN,
@@ -126,6 +131,7 @@ class ParallelAsianTreebank(datasets.GeneratorBasedBuilder):
                 mapping_data[id][language] = sentence
 
         combination_languages = list(combinations(_LANGUAGES, 2))
+        breakpoint()
 
         i = 0
 
